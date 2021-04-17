@@ -2,7 +2,8 @@ defmodule Kobold.Url do
   use Ecto.Schema
   import Ecto.Changeset
 
-  schema "urls" do
+  @primary_key false
+  schema "url" do
     field(:hash, :string, primary_key: true)
     field(:original, :string)
     field(:creation_date, :utc_datetime)
