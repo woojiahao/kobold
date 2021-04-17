@@ -1,6 +1,10 @@
 # Kobold
 
-**TODO: Add description**
+URL shortening service built using Elixir for the backend, PostgreSQL for the database, and Redis for caching.
+
+## Learning objectives
+
+The key learning objective with this project is to work with Ecto and Phoenix in Elixir and to build a scalable system.
 
 ## Installation
 
@@ -19,3 +23,6 @@ Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_do
 and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
 be found at [https://hexdocs.pm/kobold](https://hexdocs.pm/kobold).
 
+## Architecture
+
+While pointed out by this [design guide](https://www.educative.io/courses/grokking-the-system-design-interview/m2ygV4E81AR) that a NoSQL would serve to provide better scaling options. However, the adapter for NoSQL databases like MongoDB, Cassandra, and Riak are severely outdated so I have chosen to go with a better maintained adapter that I was more familiar with -- PostgreSQL.
