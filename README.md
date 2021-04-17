@@ -26,3 +26,11 @@ be found at [https://hexdocs.pm/kobold](https://hexdocs.pm/kobold).
 ## Architecture
 
 While pointed out by this [design guide](https://www.educative.io/courses/grokking-the-system-design-interview/m2ygV4E81AR) that a NoSQL would serve to provide better scaling options. However, the adapter for NoSQL databases like MongoDB, Cassandra, and Riak are severely outdated so I have chosen to go with a better maintained adapter that I was more familiar with -- PostgreSQL.
+
+## TODO
+
+Check out the following projects:
+
+- [Token authentication](https://github.com/ueberauth/guardian)
+- [Multi-provide authentication frameworks](https://github.com/pow-auth/assent)
+- [Authentication systems](https://github.com/ueberauth/ueberauth)
