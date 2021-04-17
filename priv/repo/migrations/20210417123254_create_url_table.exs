@@ -3,7 +3,7 @@ defmodule Kobold.Repo.Migrations.CreateUrlTable do
 
   def change do
     create table(:url, primary_key: false) do
-      add :hash, :string, size: 16, primary_key: true, null: false
+      add :hash, :string, primary_key: true, null: false
       add :original, :string, size: 512, null: false
       add :creation_date, :utc_datetime, null: false
       add :expiration_date, :utc_datetime
