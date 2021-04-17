@@ -3,7 +3,7 @@ defmodule Kobold.User do
   import Ecto.Changeset
 
   @primary_key {:user_id, :binary_id, autogenerate: true}
-  schema "users" do
+  schema "user" do
     field(:name, :string)
     field(:email, :string)
     field(:creation_date, :utc_datetime)
