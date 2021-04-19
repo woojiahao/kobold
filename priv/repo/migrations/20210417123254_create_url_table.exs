@@ -13,7 +13,7 @@ defmodule Kobold.Repo.Migrations.CreateUrlTable do
     create constraint(
       :url,
       :url_format,
-      check: "original ~ 'https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)'"
+      check: "original :: text ~ '^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)?[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$' :: text"
     )
     create index(:url, [:user_id])
   end
