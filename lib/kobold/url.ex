@@ -36,20 +36,20 @@ defmodule Kobold.Url do
       |> validate_format(:original, @url_regex, message: "invalid URL format")
       |> foreign_key_constraint(:user_id)
 
-    if user_id do
-      user =
-        Kobold.User
-        |> Kobold.Repo.get!(user_id)
-        |> Kobold.Repo.preload(:urls)
+    url =
+      if user_id do
+        user =
+          Kobold.User
+          |> Kobold.Repo.get!(user_id)
+          |> Kobold.Repo.preload(:urls)
 
-      url =
         url
         |> change()
         |> put_assoc(:user, user)
+      else
+        url
+      end
 
-      Kobold.Repo.insert!(url)
-    else
-      Kobold.Repo.insert!(url)
-    end
+    Kobold.Repo.insert!(url)
   end
 end
