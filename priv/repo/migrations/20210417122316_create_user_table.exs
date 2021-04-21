@@ -10,6 +10,11 @@ defmodule Kobold.Repo.Migrations.CreateUserTable do
       add :last_login, :utc_datetime
     end
 
+    create constraint(
+      :user,
+      :email_format,
+      check: "email ~ '^[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$'"
+    )
     create unique_index(:user, [:email])
   end
 end
