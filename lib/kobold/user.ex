@@ -18,13 +18,23 @@ defmodule Kobold.User do
     )
   end
 
-  def changeset(data, params \\ %{}) do
-    data
-    |> cast(params, [:name, :email, :last_login])
-    |> validate_required([:user_id, :name, :email, :creation_date])
-    |> unique_constraint(:email)
-    |> validate_length(:name, min: 2)
-    |> validate_length(:email, min: 2)
-    |> validate_format(:email, ~r/@/)
+  def insert(name, email) do
+    params = %{
+      name: name,
+      email: email,
+      creation_date: DateTime.truncate(DateTime.utc_now(), :second),
+      last_login: nil
+    }
+
+    user =
+      %Kobold.User{}
+      |> cast(params, [:name, :email, :creation_date, :last_login])
+      |> validate_required([:user_id, :name, :email, :creation_date])
+      |> unique_constraint(:email)
+      |> validate_length(:name, min: 2)
+      |> validate_length(:email, min: 2)
+      |> validate_format(:email, ~r/@/)
+
+    Kobold.Repo.insert!(user)
   end
 end
