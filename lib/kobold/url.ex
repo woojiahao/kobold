@@ -20,11 +20,11 @@ defmodule Kobold.Url do
 
   @url_regex ~r"https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,255}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)"
 
-  def insert(hash, original, creation_date, expiration_date \\ nil, user_id \\ nil) do
+  def insert(hash, original, expiration_date \\ nil, user_id \\ nil) do
     params = %{
       hash: hash,
       original: original,
-      creation_date: creation_date,
+      creation_date: DateTime.truncate(DateTime.utc_now(), :second),
       expiration_date: expiration_date
     }
 
