@@ -71,14 +71,8 @@ defmodule Kobold.Url do
 
     url =
       if user_id do
-        user =
-          Kobold.User
-          |> Kobold.Repo.get!(user_id)
-          |> Kobold.Repo.preload(:urls)
-
-        url
-        |> change()
-        |> put_assoc(:user, user)
+        user = Kobold.User.get(user_id)
+        url |> change() |> put_assoc(:user, user)
       else
         url
       end

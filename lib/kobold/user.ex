@@ -53,4 +53,10 @@ defmodule Kobold.User do
 
     Kobold.Repo.insert!(user)
   end
+
+  def get(user_id) do
+    Kobold.User
+    |> Kobold.Repo.get!(user_id)
+    |> Kobold.Repo.preload(:urls)
+  end
 end
