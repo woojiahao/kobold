@@ -2,6 +2,17 @@ defmodule Kobold.User do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @definitions [
+    name: [
+      type: :string,
+      required: true
+    ],
+    email: [
+      type: :string,
+      required: true
+    ]
+  ]
+
   @primary_key {:user_id, :binary_id, autogenerate: true}
   schema "user" do
     field(:name, :string)
@@ -18,17 +29,22 @@ defmodule Kobold.User do
     )
   end
 
-  def insert(name, email) do
-    params = %{
-      name: name,
-      email: email,
-      creation_date: DateTime.truncate(DateTime.utc_now(), :second),
-      last_login: nil
-    }
+  @spec insert(keyword()) :: {:ok, Kobold.User} | {:error, Ecto.Changeset}
+  def insert(params) do
+    creation_date = DateTime.truncate(DateTime.utc_now(), :second)
+    [name: name, email: email] = NimbleOptions.validate!(@definitions, params)
 
     user =
       %Kobold.User{}
-      |> cast(params, [:name, :email, :creation_date, :last_login])
+      |> cast(
+        %{
+          name: name,
+          email: email,
+          last_login: nil,
+          creation_date: creation_date
+        },
+        [:name, :email, :creation_date, :last_login]
+      )
       |> validate_required([:user_id, :name, :email, :creation_date])
       |> unique_constraint(:email)
       |> validate_length(:name, min: 2)
