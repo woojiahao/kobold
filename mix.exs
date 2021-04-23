@@ -23,7 +23,8 @@ defmodule Kobold.MixProject do
       {:ecto_sql, "~> 3.0"},
       {:postgrex, ">= 0.0.0"},
       {:redix, ">= 0.0.0"},
-      {:castore, ">= 0.0.0"}
+      {:castore, ">= 0.0.0"},
+      {:nimble_options, "~> 0.3.0"}
     ]
   end
 end
