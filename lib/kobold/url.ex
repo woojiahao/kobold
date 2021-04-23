@@ -2,7 +2,7 @@ defmodule Kobold.Url do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @options [
+  @definitions [
     hash: [
       type: {:or, [:string, :atom]},
       default: :hash,
@@ -51,7 +51,7 @@ defmodule Kobold.Url do
       original: original,
       expiration_date: expiration_date,
       user_id: user_id
-    ] = NimbleOptions.validate!(params, @options)
+    ] = NimbleOptions.validate!(params, @definitions)
 
     url =
       %Kobold.Url{}
