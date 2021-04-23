@@ -34,3 +34,8 @@ Check out the following projects:
 - [Token authentication](https://github.com/ueberauth/guardian)
 - [Multi-provide authentication frameworks](https://github.com/pow-auth/assent)
 - [Authentication systems](https://github.com/ueberauth/ueberauth)
+
+### Features
+
+- [ ] Anonymous link generation
+- [ ] User-based link generation
