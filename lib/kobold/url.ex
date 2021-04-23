@@ -2,6 +2,25 @@ defmodule Kobold.Url do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @options [
+    hash: [
+      type: {:or, [:string, :atom]},
+      default: :hash,
+      required: true
+    ],
+    original: [
+      type: :string,
+      required: true
+    ],
+    expiration_date: [
+      type: {:custom, Kobold.CustomValidate, :validate_datetime, []}
+    ],
+    user_id: [
+      type: :string,
+      required: true
+    ]
+  ]
+
   @primary_key false
   schema "url" do
     field(:hash, :string, primary_key: true)
@@ -20,17 +39,31 @@ defmodule Kobold.Url do
 
   @url_regex ~r"https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,255}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)"
 
-  def insert(hash, original, expiration_date \\ nil, user_id \\ nil) do
-    params = %{
+  @doc """
+  Creates a shortened URL.
+  """
+  @spec insert(keyword()) :: {:ok, Kobold.Url} | {:error, Ecto.Changeset}
+  def insert(params) do
+    creation_date = DateTime.truncate(DateTime.utc_now(), :second)
+    # TODO: Enforce specific rules for custom hashes
+    [
       hash: hash,
       original: original,
-      creation_date: DateTime.truncate(DateTime.utc_now(), :second),
-      expiration_date: expiration_date
-    }
+      expiration_date: expiration_date,
+      user_id: user_id
+    ] = NimbleOptions.validate!(params, @options)
 
     url =
       %Kobold.Url{}
-      |> cast(params, [:hash, :original, :creation_date, :expiration_date])
+      |> cast(
+        %{
+          hash: hash,
+          original: original,
+          creation_date: creation_date,
+          expiration_date: expiration_date
+        },
+        [:hash, :original, :creation_date, :expiration_date]
+      )
       |> validate_required([:hash, :original, :creation_date])
       |> validate_length(:original, max: 512)
       |> validate_format(:original, @url_regex, message: "invalid URL format")
