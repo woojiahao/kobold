@@ -27,6 +27,18 @@ be found at [https://hexdocs.pm/kobold](https://hexdocs.pm/kobold).
 
 While pointed out by this [design guide](https://www.educative.io/courses/grokking-the-system-design-interview/m2ygV4E81AR) that a NoSQL would serve to provide better scaling options. However, the adapter for NoSQL databases like MongoDB, Cassandra, and Riak are severely outdated so I have chosen to go with a better maintained adapter that I was more familiar with -- PostgreSQL.
 
+## Hashing algorithm
+
+The hashing algorithm is comprised of the following steps (taken from the design guide): 
+
+1. Parse any URLs to remove any URL encoding
+2. Compute a unique hash of the URL
+3. Encode the hash of the URL using base64 or base62
+4. Extract a 6-character long key from the hash (sufficient for use case)
+5. Generate a random index to extract from the hash to form our key
+6. Attempt to insert the key into the database
+7. If the key cannot be inserted due to a primary key conflict, we will re-roll the random indices till it works
+
 ## TODO
 
 Check out the following projects:
@@ -39,3 +51,7 @@ Check out the following projects:
 
 - [ ] Anonymous link generation
 - [ ] User-based link generation
+
+### Guide
+
+- Discuss the differences between hashing and encoding
