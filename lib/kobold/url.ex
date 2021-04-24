@@ -5,7 +5,7 @@ defmodule Kobold.Url do
   @definitions [
     hash: [
       type: {:or, [:string, :atom]},
-      default: :hash,
+      default: :auto,
       required: true
     ],
     original: [
@@ -52,6 +52,17 @@ defmodule Kobold.Url do
       expiration_date: expiration_date,
       user_id: user_id
     ] = NimbleOptions.validate!(params, @definitions)
+
+    hash =
+      if hash == :auto do
+        # Automatically generate the hash if no custom hash is provided
+        URI.decode(original)
+        |> Kobold.Utility.sha256()
+        |> Base.encode64()
+        |> Kobold.Utility.shuffle_random(6)
+      else
+        hash
+      end
 
     url =
       %Kobold.Url{}
