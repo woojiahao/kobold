@@ -32,16 +32,7 @@ defmodule Kobold.Url do
     expiration_date = Keyword.get(params, :expiration_date)
     user_id = Keyword.get(params, :user_id)
 
-    {:ok, hash} =
-      if hash == :auto do
-        # Automatically generate the hash if no custom hash is provided
-        URI.decode(original)
-        |> Kobold.Utility.sha256()
-        |> Base.encode64()
-        |> Kobold.Utility.shuffle_random(6)
-      else
-        hash
-      end
+    hash = if hash == :auto, do: generate_hash(original), else: hash
 
     url =
       %Kobold.Url{}
@@ -67,6 +58,31 @@ defmodule Kobold.Url do
         url
       end
 
-    Kobold.Repo.insert!(url)
+    attempt_insert(url)
+  end
+
+  defp attempt_insert(url) do
+    try do
+      Kobold.Repo.insert(url)
+    rescue
+      Ecto.ConstraintError ->
+        hash =
+          if url.data.hash == :auto,
+            do: generate_hash(url.data.original),
+            else: raise(Kobold.DuplicateHashException)
+
+        url = url |> cast(%{hash: hash}, [:hash])
+        attempt_insert(url)
+    end
+  end
+
+  defp generate_hash(url) do
+    {:ok, hash} =
+      URI.decode(url)
+      |> Kobold.Utility.sha256()
+      |> Base.encode64()
+      |> Kobold.Utility.shuffle_random(6)
+
+    hash
   end
 end
