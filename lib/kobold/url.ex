@@ -2,25 +2,6 @@ defmodule Kobold.Url do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @definitions [
-    hash: [
-      type: {:or, [:string, :atom]},
-      default: :auto,
-      required: true
-    ],
-    original: [
-      type: :string,
-      required: true
-    ],
-    expiration_date: [
-      type: {:custom, Kobold.CustomValidate, :validate_datetime, []}
-    ],
-    user_id: [
-      type: :string,
-      required: true
-    ]
-  ]
-
   @primary_key false
   schema "url" do
     field(:hash, :string, primary_key: true)
@@ -46,14 +27,12 @@ defmodule Kobold.Url do
   def insert(params) do
     creation_date = DateTime.truncate(DateTime.utc_now(), :second)
     # TODO: Enforce specific rules for custom hashes
-    [
-      hash: hash,
-      original: original,
-      expiration_date: expiration_date,
-      user_id: user_id
-    ] = NimbleOptions.validate!(params, @definitions)
+    hash = Keyword.get(params, :hash, :auto)
+    original = Keyword.fetch!(params, :original)
+    expiration_date = Keyword.get(params, :expiration_date)
+    user_id = Keyword.get(params, :user_id)
 
-    hash =
+    {:ok, hash} =
       if hash == :auto do
         # Automatically generate the hash if no custom hash is provided
         URI.decode(original)
