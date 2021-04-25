@@ -23,6 +23,7 @@ defmodule Kobold.Utility do
   @spec append(list(), any()) :: list()
   def append(list, value), do: [value | list |> Enum.reverse()] |> Enum.reverse()
 
+  def utc_now(), do: DateTime.utc_now() |> DateTime.truncate(:second)
   def sha256(block), do: :crypto.hash(:sha256, block)
 
   # Generates a list of random indices based on given size, counting up to max
