@@ -24,6 +24,11 @@ defmodule Kobold.UtilityTest do
       assert status = :error
     end
 
+    test "shuffled string replaces / with ;" do
+      test = "a/8s7"
+      assert shuffle_random(test, String.length(test)) == {:ok, "a8s7;"}
+    end
+
     test "shuffle_random('abc123', 5) shuffles to 'ac312'" do
       assert shuffle_random("abc123", 5) == {:ok, "ac312"}
     end

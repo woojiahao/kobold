@@ -14,7 +14,12 @@ defmodule Kobold.Utility do
       if indices |> Enum.any?(&(&1 >= str_len)) do
         {:error, "invalid index generated"}
       else
-        shuffled = indices |> Enum.map(&String.at(block, &1)) |> Enum.join()
+        shuffled =
+          indices
+          |> Enum.map(&String.at(block, &1))
+          |> Enum.map(&if &1 == "/", do: ";", else: &1)
+          |> Enum.join()
+
         {:ok, shuffled}
       end
     end
