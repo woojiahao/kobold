@@ -7,7 +7,7 @@ defmodule Kobold.Application do
   def start(_type, _args) do
     children = [
       Kobold.Repo,
-      {Plug.Cowboy, scheme: :http, plug: Kobold.RedirectServer, options: [port: 4001]}
+      {Plug.Cowboy, scheme: :http, plug: Kobold.Server, options: [port: 4001]}
     ]
 
     opts = [strategy: :one_for_one, name: Kobold.Supervisor]

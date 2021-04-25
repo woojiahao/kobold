@@ -1,4 +1,4 @@
-defmodule Kobold.RedirectServer do
+defmodule Kobold.Server do
   use Plug.Router
 
   if Mix.env() == :dev do
