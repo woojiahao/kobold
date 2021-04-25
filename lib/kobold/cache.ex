@@ -1,5 +1,6 @@
 defmodule Kobold.Cache do
   # TODO: Add elaborate fail safe feature similar to the rate limiting feature of Broadway to monitor Redis connections
+  # TODO: Add deleting of cache if the hash is deleted
   use GenServer
   require Logger
 
@@ -16,8 +17,8 @@ defmodule Kobold.Cache do
     GenServer.cast(__MODULE__, {:store, hash, original})
   end
 
-  def has_hash?(hash) do
-    GenServer.call(__MODULE__, {:has_hash?, hash})
+  def get_original(hash) do
+    GenServer.call(__MODULE__, {:get_original, hash})
   end
 
   @impl true
@@ -48,7 +49,7 @@ defmodule Kobold.Cache do
   end
 
   @impl true
-  def handle_call({:has_hash?, hash}, _from, %{name: name, retry_after: retry_after} = state) do
+  def handle_call({:get_original, hash}, _from, %{name: name, retry_after: retry_after} = state) do
     case Redix.command(name, ["GET", hash]) do
       {:ok, original} ->
         if !is_nil(original) do
@@ -57,7 +58,7 @@ defmodule Kobold.Cache do
           Logger.info("#{hash} not found in cache")
         end
 
-        {:reply, !is_nil(original), state}
+        {:reply, original, state}
 
       {:error, %Redix.ConnectionError{}} ->
         Logger.warning(
@@ -66,12 +67,12 @@ defmodule Kobold.Cache do
           }s"
         )
 
-        Process.send_after(__MODULE__, {:get_hash, hash}, retry_after)
-        {:reply, false, state}
+        Process.send_after(__MODULE__, {:get_original, hash}, retry_after)
+        {:reply, nil, state}
 
       {:error, %Redix.Error{message: message}} ->
         Logger.error("failed to get #{hash} from Redis with message #{message}")
-        {:reply, false, state}
+        {:reply, nil, state}
     end
   end
 end
