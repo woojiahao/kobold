@@ -25,6 +25,7 @@ defmodule Kobold.Server do
           # TODO: Display custom 404 path
           send_resp(conn, 404, "Invalid path")
         else
+          Kobold.Cache.store_hash(url.hash, url.original)
           redirect(conn, url.original)
         end
       end
