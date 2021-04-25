@@ -39,6 +39,15 @@ The hashing algorithm is comprised of the following steps (taken from the design
 6. Attempt to insert the key into the database
 7. If the key cannot be inserted due to a primary key conflict, we will re-roll the random indices till it works
 
+## Redirecting algorithm
+
+When any path is called from the web server, the following algorithm is executed...
+
+1. Query cache for path, if available, redirect to the original URL
+2. If not available in cache, query database and redirect to the original URL
+3. If database is queried, cache the data for future use
+4. TODO: Add telemetry
+
 ## TODO
 
 Check out the following projects:
@@ -51,6 +60,9 @@ Check out the following projects:
 
 - [ ] Anonymous link generation
 - [ ] User-based link generation
+- [ ] Telemetry
+- [ ] User management
+- [ ] Front-end
 
 ### Guide
 
