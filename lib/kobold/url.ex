@@ -1,6 +1,7 @@
 defmodule Kobold.Url do
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query, only: [from: 2]
 
   @primary_key false
   schema "url" do
@@ -34,6 +35,7 @@ defmodule Kobold.Url do
 
     hash = if hash == :auto, do: generate_hash(original), else: hash
 
+    # TODO: Maybe store decoded URL in db?
     url =
       %Kobold.Url{}
       |> cast(
@@ -59,6 +61,30 @@ defmodule Kobold.Url do
       end
 
     attempt_insert(url)
+  end
+
+  def get(hash) do
+    # TODO: Handle expiration date
+    now = Kobold.Utility.utc_now()
+
+    query =
+      from(
+        u in Kobold.Url,
+        where:
+          u.hash == ^hash and
+            (is_nil(u.expiration_date) or
+               u.expiration_date > ^now)
+      )
+
+    try do
+      Kobold.Repo.one(query)
+    rescue
+      Ecto.MultipleResultsError ->
+        raise Kobold.DuplicateHashException
+
+      ex ->
+        reraise(ex, __STACKTRACE__)
+    end
   end
 
   defp attempt_insert(url) do
