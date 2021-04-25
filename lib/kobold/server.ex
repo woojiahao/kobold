@@ -16,7 +16,13 @@ defmodule Kobold.Server do
       conn |> resp(200, "") |> put_resp_header("Content-Type", "image/x-icon")
     else
       url = Kobold.Url.get(path)
-      conn |> resp(:found, "") |> put_resp_header("location", url.original)
+
+      if url == nil do
+        # TODO: Display custom 404 path
+        send_resp(conn, 404, "Invalid path")
+      else
+        conn |> resp(:found, "") |> put_resp_header("location", url.original)
+      end
     end
   end
 
