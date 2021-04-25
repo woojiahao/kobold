@@ -48,6 +48,15 @@ When any path is called from the web server, the following algorithm is executed
 3. If database is queried, cache the data for future use
 4. TODO: Add telemetry
 
+## Caching algorithm
+
+For caching, we can use the LRU (Last Recently Used) `maxmemory.policy` in Redis so that we minimise the work we have to
+perform through our backend.
+
+Redix spawns one process for communicating with the cache and we spawn a custom GenServer to handle communications with
+this Redix process since Redix must start a link. We spawn a new process for communications as we want to leave our main
+thread untouched.
+
 ## TODO
 
 Check out the following projects:
@@ -63,6 +72,7 @@ Check out the following projects:
 - [ ] Telemetry
 - [ ] User management
 - [ ] Front-end
+- [ ] Private hashes?
 
 ### Guide
 
