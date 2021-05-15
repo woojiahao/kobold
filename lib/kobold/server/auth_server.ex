@@ -1,12 +1,8 @@
 defmodule Kobold.Server.AuthServer do
   use Kobold.Server
 
-  @password_regex ~r/^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/
-
   post "/signup" do
-    signup = enforce_signup_data(conn.body_params)
-
-    case signup do
+    case enforce_signup_data(conn.body_params) do
       {:ok, signup} ->
         case validate_raw_password(signup["password"]) do
           {:ok, _password} ->
@@ -32,14 +28,35 @@ defmodule Kobold.Server.AuthServer do
     end
   end
 
-  defp enforce_signup_data(
-         %{"email" => _email, "name" => _name, "password" => _password} = signup
-       ),
-       do: {:ok, signup}
+  post "/login" do
+    case enforce_login_data(conn.body_params) do
+      {:ok, login} ->
+        case User.login(login) do
+          # TODO: create JWT token
+          {:ok, user} ->
+            IO.inspect(user)
+
+          {:error, reason} ->
+            invalid_request(conn, reason)
+        end
+
+      {:error, reason} ->
+        invalid_request(conn, reason)
+    end
+  end
+
+  defp enforce_login_data(%{"email" => _, "password" => _} = login), do: {:ok, login}
+
+  defp enforce_login_data(_),
+    do: {:error, "login data missing required fields: [email, password]"}
+
+  defp enforce_signup_data(%{"email" => _, "name" => _, "password" => _} = signup),
+    do: {:ok, signup}
 
   defp enforce_signup_data(_),
     do: {:error, "signup data missing required fields: [email, name, password]"}
 
+  @password_regex ~r/^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/
   defp validate_raw_password(raw_password) do
     if(Regex.match?(@password_regex, raw_password)) do
       {:ok, raw_password}

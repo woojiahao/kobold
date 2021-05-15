@@ -1,6 +1,7 @@
 defmodule Kobold.User do
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query, only: [from: 2]
 
   @primary_key {:user_id, :binary_id, autogenerate: true}
   schema "user" do
@@ -44,6 +45,18 @@ defmodule Kobold.User do
       |> validate_format(:email, ~r/@/, message: "email format is invalid")
 
     Kobold.Repo.insert(user)
+  end
+
+  def login(%{"email" => email, "password" => password}) do
+    if user = from(u in Kobold.User, where: u.email == ^email) |> Kobold.Repo.one() do
+      if Bcrypt.verify_pass(password, user.encrypted_password) do
+        {:ok, user}
+      else
+        {:error, "invalid password"}
+      end
+    else
+      {:error, "invalid email"}
+    end
   end
 
   def get(user_id) do
