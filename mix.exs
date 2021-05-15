@@ -25,7 +25,9 @@ defmodule Kobold.MixProject do
       {:redix, ">= 0.0.0"},
       {:castore, ">= 0.0.0"},
       {:nimble_options, "~> 0.3.0"},
-      {:plug_cowboy, "~> 2.0"}
+      {:plug_cowboy, "~> 2.0"},
+      {:jason, "~> 1.2"},
+      {:bcrypt_elixir, "~> 2.0"}
     ]
   end
 end

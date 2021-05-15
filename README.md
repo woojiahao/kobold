@@ -1,6 +1,6 @@
 # Kobold
 
-URL shortening service built using Elixir for the backend, PostgreSQL for the database, and Redis for caching.
+Backend for URL shortening service built using Elixir for the backend, PostgreSQL for the database, and Redis for caching.
 
 ## Learning objectives
 

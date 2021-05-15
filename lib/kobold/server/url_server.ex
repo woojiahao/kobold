@@ -1,4 +1,4 @@
-defmodule Kobold.Server do
+defmodule Kobold.Server.UrlServer do
   use Plug.Router
   require Logger
 

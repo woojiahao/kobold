@@ -10,7 +10,8 @@ defmodule Kobold.Application do
     children = [
       Kobold.Repo,
       build_caching_supervisor(@cache_name, 5_000),
-      {Plug.Cowboy, scheme: :http, plug: Kobold.Server, options: [port: 4001]}
+      {Plug.Cowboy, scheme: :http, plug: Kobold.Server.UrlServer, options: [port: 4001]},
+      {Plug.Cowboy, scheme: :http, plug: Kobold.Server.AuthServer, options: [port: 4003]}
     ]
 
     opts = [strategy: :one_for_one, name: Kobold.Supervisor]

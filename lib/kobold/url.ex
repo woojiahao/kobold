@@ -87,6 +87,10 @@ defmodule Kobold.Url do
     end
   end
 
+  def delete(hash, user_id) do
+    
+  end
+
   defp attempt_insert(url) do
     try do
       Kobold.Repo.insert(url)
