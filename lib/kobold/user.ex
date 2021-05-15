@@ -38,10 +38,10 @@ defmodule Kobold.User do
         fields
       )
       |> validate_required(fields)
-      |> unique_constraint(:email)
-      |> validate_length(:name, min: 2)
-      |> validate_length(:email, min: 2)
-      |> validate_format(:email, ~r/@/)
+      |> unique_constraint(:email, message: "email already exists")
+      |> validate_length(:name, min: 2, message: "name must be more than 2 characters long")
+      |> validate_length(:email, min: 2, message: "email must be more than 2 characters long")
+      |> validate_format(:email, ~r/@/, message: "email format is invalid")
 
     Kobold.Repo.insert(user)
   end

@@ -29,12 +29,7 @@ defmodule Kobold.Server do
   end
 
   def invalid_request(conn, reason) do
-    error = %{
-      "request_status" => "error",
-      "http_code" => 400,
-      "http_message" => "invalid request",
-      "error_reason" => reason
-    }
+    error = build_error_response(400, "invalid request", reason)
 
     conn
     |> set_content_type
@@ -54,12 +49,13 @@ defmodule Kobold.Server do
     |> respond(201, response)
   end
 
+  @spec internal_server_error(Plug.Conn.t(), list() | String.t()) :: Plug.Conn.t()
   def internal_server_error(conn, error) do
     error =
       build_error_response(
         500,
         "internal server error",
-        "#{error}, contact the owner of the API"
+        error
       )
 
     conn
@@ -67,12 +63,21 @@ defmodule Kobold.Server do
     |> respond(500, error)
   end
 
-  defp build_error_response(status, message, error) do
+  defp build_error_response(status, message, error) when is_bitstring(error) do
     %{
       "request_status" => "error",
       "http_code" => status,
       "http_message" => message,
       "error_reason" => error
+    }
+  end
+
+  defp build_error_response(status, message, errors) when is_list(errors) do
+    %{
+      "request_status" => "error",
+      "http_code" => status,
+      "http_message" => message,
+      "errors" => errors
     }
   end
 

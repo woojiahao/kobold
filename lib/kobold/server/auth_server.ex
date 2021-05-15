@@ -11,8 +11,16 @@ defmodule Kobold.Server.AuthServer do
         case validate_raw_password(signup["password"]) do
           {:ok, _password} ->
             case User.insert(signup) do
-              {:ok, _user} -> created(conn, "user created successfully")
-              {:error, _changeset} -> internal_server_error(conn, "failed to create user")
+              {:ok, _user} ->
+                created(conn, "user created successfully")
+
+              {:error, changeset} ->
+                errors =
+                  changeset.errors
+                  |> Enum.map(fn {_, {reason, _}} -> reason end)
+
+                Logger.error(IO.inspect(errors))
+                internal_server_error(conn, errors)
             end
 
           {:error, reason} ->
