@@ -49,6 +49,17 @@ defmodule Kobold.Server do
     |> respond(201, response)
   end
 
+  def issue_jwt_token(conn, token) do
+    response = %{
+      "message" => "JWT token issued",
+      "token" => token
+    }
+
+    conn
+    |> set_content_type
+    |> respond(201, response)
+  end
+
   @spec internal_server_error(Plug.Conn.t(), list() | String.t()) :: Plug.Conn.t()
   def internal_server_error(conn, error) do
     error =

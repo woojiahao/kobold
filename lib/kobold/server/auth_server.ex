@@ -34,7 +34,7 @@ defmodule Kobold.Server.AuthServer do
         case User.login(login) do
           {:ok, user} ->
             {:ok, token, _claims} = Kobold.Guardian.encode_and_sign(user.user_id)
-            created(conn, token)
+            issue_jwt_token(conn, token)
 
           {:error, reason} ->
             invalid_request(conn, reason)
