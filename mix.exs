@@ -14,6 +14,7 @@ defmodule Kobold.MixProject do
   def application do
     [
       extra_applications: [:logger],
+      application: [:guardian],
       mod: {Kobold.Application, []}
     ]
   end
@@ -27,7 +28,8 @@ defmodule Kobold.MixProject do
       {:nimble_options, "~> 0.3.0"},
       {:plug_cowboy, "~> 2.0"},
       {:jason, "~> 1.2"},
-      {:bcrypt_elixir, "~> 2.0"}
+      {:bcrypt_elixir, "~> 2.0"},
+      {:guardian, "~> 2.0"}
     ]
   end
 end

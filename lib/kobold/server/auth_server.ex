@@ -32,9 +32,9 @@ defmodule Kobold.Server.AuthServer do
     case enforce_login_data(conn.body_params) do
       {:ok, login} ->
         case User.login(login) do
-          # TODO: create JWT token
           {:ok, user} ->
-            IO.inspect(user)
+            {:ok, token, _claims} = Kobold.Guardian.encode_and_sign(user.user_id)
+            created(conn, token)
 
           {:error, reason} ->
             invalid_request(conn, reason)

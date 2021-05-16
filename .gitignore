@@ -22,6 +22,8 @@ erl_crash.dump
 # Ignore package tarball (built via "mix hex.build").
 kobold-*.tar
 
+# Ignore secret files
+config/*.secret.exs
 
 # Temporary files for e.g. tests
 /tmp
