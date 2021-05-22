@@ -49,10 +49,11 @@ defmodule Kobold.Server do
     |> respond(201, response)
   end
 
-  def issue_jwt_token(conn, token) do
+  def issue_jwt_token(conn, access_token, refresh_token) do
     response = %{
       "message" => "JWT token issued",
-      "token" => token
+      "access_token" => access_token,
+      "refresh_token" => refresh_token
     }
 
     conn

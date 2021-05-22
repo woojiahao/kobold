@@ -1,7 +1,17 @@
 defmodule Kobold.Server.AuthServer do
-  use Kobold.Server
+  @moduledoc """
+  This server is only responsible for issuing and refreshing JWT tokens for access to the resource server on port 4001.
+  It will not be responsible for verifying if the token is valid. That is the responsibility of the resource server to
+  verify every JWT included in the request body.
 
-  post "/signup" do
+  This authentication server uses JWTs as the access tokens while issuing refresh tokens to ensure that the client has
+  valid access tokens all the time. A refresh token is used over refreshing the JWT internally as it makes the adoption
+  of other OAuth flows a lot easier for the client.
+  """
+  use Kobold.Server
+  import Kobold.Guardian
+
+  post "/auth/signup" do
     case enforce_signup_data(conn.body_params) do
       {:ok, signup} ->
         case validate_raw_password(signup["password"]) do
@@ -28,13 +38,16 @@ defmodule Kobold.Server.AuthServer do
     end
   end
 
-  post "/login" do
+  post "/auth/login" do
     case enforce_login_data(conn.body_params) do
       {:ok, login} ->
         case User.login(login) do
           {:ok, user} ->
-            {:ok, token, _claims} = Kobold.Guardian.encode_and_sign(user.user_id)
-            issue_jwt_token(conn, token)
+            {:ok, access_token, _} = encode_and_sign(user.user_id)
+
+            {:ok, refresh_token, _} = encode_and_sign(user.user_id, %{}, token_type: "refresh")
+
+            issue_jwt_token(conn, access_token, refresh_token)
 
           {:error, reason} ->
             invalid_request(conn, reason)
@@ -44,6 +57,24 @@ defmodule Kobold.Server.AuthServer do
         invalid_request(conn, reason)
     end
   end
+
+  post "/auth/refresh" do
+    case enforce_refresh_data(conn.body_params) do
+      {:ok, refresh_token} ->
+        {:ok, _, {new_access_token, _}} = exchange(refresh_token, "refresh", "access")
+        {:ok, user_id, _} = resource_from_token(new_access_token)
+        {:ok, new_refresh_token, _} = encode_and_sign(user_id, %{}, token_type: "refresh")
+
+        issue_jwt_token(conn, new_access_token, new_refresh_token)
+
+      {:error, reason} ->
+        invalid_request(conn, reason)
+    end
+  end
+
+  defp enforce_refresh_data(%{"refresh_token" => refresh_token}), do: {:ok, refresh_token}
+
+  defp enforce_refresh_data(_), do: {:error, "missing [refresh_token]"}
 
   defp enforce_login_data(%{"email" => _, "password" => _} = login), do: {:ok, login}
 

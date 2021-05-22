@@ -8,7 +8,7 @@ defmodule Kobold.Guardian do
 
   def resource_from_claims(claims) do
     id = claims["sub"]
-    resource = Kobold.User.get(id)
+    resource = Kobold.User.get(id).user_id
     {:ok, resource}
   end
 end
