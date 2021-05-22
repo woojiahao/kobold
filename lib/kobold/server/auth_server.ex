@@ -42,18 +42,11 @@ defmodule Kobold.Server.AuthServer do
     # TODO: Update database
     case enforce_login_data(conn.body_params) do
       {:ok, login} ->
-        case User.login(login) do
-          {:ok, user} ->
-            case issue_token(user.user_id) do
-              {:ok, access_token, refresh_token} ->
-                issue_jwt_token(conn, access_token, refresh_token)
-
-              {:error, reason} ->
-                internal_server_error(conn, reason)
-            end
-
-          {:error, reason} ->
-            internal_server_error(conn, reason)
+        with {:ok, user} <- User.login(login),
+             {:ok, access_token, refresh_token} <- issue_token(user.user_id) do
+          issue_jwt_token(conn, access_token, refresh_token)
+        else
+          {:error, reason} -> internal_server_error(conn, reason)
         end
 
       {:error, reason} ->
@@ -78,15 +71,11 @@ defmodule Kobold.Server.AuthServer do
     # TODO: Update database
     case enforce_logout_data(conn.body_params) do
       {:ok, %{"access_token" => access_token, "refresh_token" => refresh_token}} ->
-        case revoke_token(access_token) do
-          :ok ->
-            case revoke_token(refresh_token) do
-              :ok -> ok(conn, "successfully revoked access & refresh tokens")
-              :error -> internal_server_error(conn, "unable to revoke refresh token")
-            end
-
-          :error ->
-            internal_server_error(conn, "unable to revoke access token")
+        with :ok <- revoke_token(access_token),
+             :ok <- revoke_token(refresh_token) do
+          ok(conn, "successfully revoked access & refresh tokens")
+        else
+          :error -> internal_server_error(conn, "unable to revoke refresh token")
         end
 
       {:error, reason} ->
