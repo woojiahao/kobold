@@ -75,6 +75,7 @@ defmodule Kobold.Server.AuthServer do
   end
 
   post "/auth/logout" do
+    # TODO: Update database
     case enforce_logout_data(conn.body_params) do
       {:ok, %{"access_token" => access_token, "refresh_token" => refresh_token}} ->
         case revoke_token(access_token) do
