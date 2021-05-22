@@ -17,11 +17,11 @@ defmodule Kobold.Guardian do
       {:ok, access_token, _} ->
         case encode_and_sign(user_id, %{}, token_type: "refresh") do
           {:ok, refresh_token, _} -> {:ok, access_token, refresh_token}
-          {:error, reason} -> {:error, reason}
+          {:error, _} -> {:error, "Error attempting to issue refresh token."}
         end
 
-      {:error, reason} ->
-        {:error, reason}
+      {:error, _} ->
+        {:error, "Error attempting to issue access token."}
     end
   end
 
@@ -34,16 +34,17 @@ defmodule Kobold.Guardian do
               {:ok, new_refresh_token, _} ->
                 {:ok, new_access_token, new_refresh_token}
 
-              {:error, reason} ->
-                {:error, reason}
+              {:error, _} ->
+                {:error, "Error attempting to issue new refresh token."}
             end
 
-          {:error, reason} ->
-            {:error, reason}
+          {:error, _} ->
+            {:error, "Error attempting to extract resource from access token."}
         end
 
-      {:error, reason} ->
-        {:error, reason}
+      {:error, _} ->
+        {:error,
+         "Error attempting to exchange refresh token for access token. Ensure that refresh token is valid."}
     end
   end
 end

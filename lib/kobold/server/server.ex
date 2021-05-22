@@ -93,6 +93,9 @@ defmodule Kobold.Server do
     }
   end
 
+  defp build_error_response(status, message, error) when is_atom(error),
+    do: build_error_response(status, message, Atom.to_string(error))
+
   defp respond(conn, status, body) do
     send_resp(conn, status, Jason.encode!(body))
   end
