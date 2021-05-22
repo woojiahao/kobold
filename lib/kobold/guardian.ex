@@ -24,4 +24,26 @@ defmodule Kobold.Guardian do
         {:error, reason}
     end
   end
+
+  def refresh_token(refresh_token) do
+    case exchange(refresh_token, "refresh", "access") do
+      {:ok, _, {new_access_token, _}} ->
+        case resource_from_token(new_access_token) do
+          {:ok, user_id, _} ->
+            case encode_and_sign(user_id, %{}, token_type: "refresh") do
+              {:ok, new_refresh_token, _} ->
+                {:ok, new_access_token, new_refresh_token}
+
+              {:error, reason} ->
+                {:error, reason}
+            end
+
+          {:error, reason} ->
+            {:error, reason}
+        end
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
 end

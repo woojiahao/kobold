@@ -63,11 +63,10 @@ defmodule Kobold.Server.AuthServer do
   post "/auth/refresh" do
     case enforce_refresh_data(conn.body_params) do
       {:ok, refresh_token} ->
-        {:ok, _, {new_access_token, _}} = exchange(refresh_token, "refresh", "access")
-        {:ok, user_id, _} = resource_from_token(new_access_token)
-        {:ok, new_refresh_token, _} = encode_and_sign(user_id, %{}, token_type: "refresh")
-
-        issue_jwt_token(conn, new_access_token, new_refresh_token)
+        case refresh_token(refresh_token) do
+          {:ok, access_token, refresh_token} -> issue_jwt_token(conn, access_token, refresh_token)
+          {:error, reason} -> invalid_request(conn, reason)
+        end
 
       {:error, reason} ->
         invalid_request(conn, reason)
