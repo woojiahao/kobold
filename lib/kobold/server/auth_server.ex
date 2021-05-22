@@ -43,11 +43,13 @@ defmodule Kobold.Server.AuthServer do
       {:ok, login} ->
         case User.login(login) do
           {:ok, user} ->
-            {:ok, access_token, _} = encode_and_sign(user.user_id)
+            case issue_token(user.user_id) do
+              {:ok, access_token, refresh_token} ->
+                issue_jwt_token(conn, access_token, refresh_token)
 
-            {:ok, refresh_token, _} = encode_and_sign(user.user_id, %{}, token_type: "refresh")
-
-            issue_jwt_token(conn, access_token, refresh_token)
+              {:error, reason} ->
+                invalid_request(conn, reason)
+            end
 
           {:error, reason} ->
             invalid_request(conn, reason)
