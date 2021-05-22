@@ -39,6 +39,7 @@ defmodule Kobold.Server.AuthServer do
   end
 
   post "/auth/login" do
+    # TODO: Update database
     case enforce_login_data(conn.body_params) do
       {:ok, login} ->
         case User.login(login) do
@@ -48,11 +49,11 @@ defmodule Kobold.Server.AuthServer do
                 issue_jwt_token(conn, access_token, refresh_token)
 
               {:error, reason} ->
-                invalid_request(conn, reason)
+                internal_server_error(conn, reason)
             end
 
           {:error, reason} ->
-            invalid_request(conn, reason)
+            internal_server_error(conn, reason)
         end
 
       {:error, reason} ->
@@ -65,13 +66,37 @@ defmodule Kobold.Server.AuthServer do
       {:ok, refresh_token} ->
         case refresh_token(refresh_token) do
           {:ok, access_token, refresh_token} -> issue_jwt_token(conn, access_token, refresh_token)
-          {:error, reason} -> invalid_request(conn, reason)
+          {:error, reason} -> internal_server_error(conn, reason)
         end
 
       {:error, reason} ->
         invalid_request(conn, reason)
     end
   end
+
+  post "/auth/logout" do
+    case enforce_logout_data(conn.body_params) do
+      {:ok, %{"access_token" => access_token, "refresh_token" => refresh_token}} ->
+        case revoke_token(access_token) do
+          :ok ->
+            case revoke_token(refresh_token) do
+              :ok -> ok(conn, "successfully revoked access & refresh tokens")
+              :error -> internal_server_error(conn, "unable to revoke refresh token")
+            end
+
+          :error ->
+            internal_server_error(conn, "unable to revoke access token")
+        end
+
+      {:error, reason} ->
+        invalid_request(conn, reason)
+    end
+  end
+
+  defp enforce_logout_data(%{"access_token" => _, "refresh_token" => _} = logout),
+    do: {:ok, logout}
+
+  defp enforce_logout_data(_), do: {:error, "missing [access_token, refresh_token]"}
 
   defp enforce_refresh_data(%{"refresh_token" => refresh_token}), do: {:ok, refresh_token}
 

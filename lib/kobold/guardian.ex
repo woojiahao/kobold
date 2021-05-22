@@ -47,4 +47,11 @@ defmodule Kobold.Guardian do
          "Error attempting to exchange refresh token for access token. Ensure that refresh token is valid."}
     end
   end
+
+  def revoke_token(token) do
+    case revoke(token) do
+      {:ok, _} -> :ok
+      {:error, _} -> :error
+    end
+  end
 end

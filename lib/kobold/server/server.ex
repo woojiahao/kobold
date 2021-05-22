@@ -36,6 +36,19 @@ defmodule Kobold.Server do
     |> respond(400, error)
   end
 
+  def ok(conn, message) do
+    response = %{
+      "request_status" => "success",
+      "http_code" => 200,
+      "http_message" => "ok",
+      "message" => message
+    }
+
+    conn
+    |> set_content_type
+    |> respond(200, response)
+  end
+
   def created(conn, message) do
     response = %{
       "request_status" => "success",
