@@ -1,40 +1,53 @@
 defmodule Kobold.Server.UrlServer do
-  use Plug.Router
-  require Logger
-
-  if Mix.env() == :dev do
-    use Plug.Debugger
-  end
-
-  plug(Plug.Logger)
-  plug(:match)
-  plug(:dispatch)
+  # TODO: Handle when there is not enough storage
+  use Kobold.Server, authorize: true
 
   get "/:path" do
-    if path == "favicon.ico" do
-      conn |> resp(200, "") |> put_resp_header("Content-Type", "image/x-icon")
-    else
-      original = Kobold.Cache.get_original(path)
+    # TODO: Add telemetry to this
+    case path do
+      "favicon.ico" ->
+        conn |> resp(200, "") |> put_resp_header("Content-Type", "image/x-icon")
 
-      if !is_nil(original) do
-        conn |> redirect(original)
-      else
-        url = Kobold.Url.get(path)
+      _ ->
+        original = Kobold.Cache.get_original(path)
 
-        if url == nil do
-          # TODO: Display custom 404 path
-          send_resp(conn, 404, "Invalid path")
+        if !is_nil(original) do
+          conn |> redirect(original)
         else
-          Kobold.Cache.store_hash(url.hash, url.original)
-          redirect(conn, url.original)
+          case url = Kobold.Url.get(path) do
+            nil ->
+              not_found(conn, "Invalid path")
+
+            _ ->
+              Kobold.Cache.store_hash(url.hash, url.original)
+              conn |> redirect(url.original)
+          end
         end
-      end
     end
   end
 
   post "/create" do
     # TODO: Create a hashed URL
-    send_resp(conn, 200, "Creating URL")
+    # TODO: Deny based on type of path such as /auth or /delete or /create
+    create = conn.body_params
+
+    authorization = conn |> get_authorization_header()
+
+    IO.inspect(authorization)
+
+    original = Map.fetch(create, "original")
+    hash = Map.get(create, "hash", :auto)
+    expiration_date = Map.get(create, "expiration_date")
+
+    case original do
+      :error ->
+        invalid_request(conn, "missing [original]")
+
+      _ ->
+        nil
+        # TODO: Handle custom hashes
+        # Kobold.Url.insert(%{original: original, hash: hash, expiration_date: expiration_date, user_id: })
+    end
   end
 
   delete "/delete/:hash" do

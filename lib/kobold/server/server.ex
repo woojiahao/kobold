@@ -3,8 +3,8 @@ defmodule Kobold.Server do
 
   # TODO: Log any responses
 
-  defmacro __using__(_opts) do
-    quote do
+  defmacro __using__(authorize \\ false) do
+    quote bind_quoted: [authorize: authorize] do
       use Plug.Router
       require Logger
       import Kobold.Server
@@ -24,6 +24,10 @@ defmodule Kobold.Server do
         json_decoder: Jason
       )
 
+      if authorize do
+        plug(:authorize)
+      end
+
       plug(:dispatch)
     end
   end
@@ -34,6 +38,14 @@ defmodule Kobold.Server do
     conn
     |> set_content_type
     |> respond(400, error)
+  end
+
+  def not_found(conn, reason) do
+    error = build_error_response(404, "not found", reason)
+
+    conn
+    |> set_content_type
+    |> respond(404, error)
   end
 
   def ok(conn, message) do
@@ -86,6 +98,29 @@ defmodule Kobold.Server do
     conn
     |> set_content_type
     |> respond(500, error)
+  end
+
+  def authorize(conn, _opts) do
+    authorization = conn |> get_authorization_header()
+    IO.puts("authorizing")
+
+    cond do
+      is_nil(authorization) ->
+        conn
+
+      :ok = Kobold.Guardian.verify_token(authorization) ->
+        conn
+
+      :error = Kobold.Guardian.verify_token(authorization) ->
+        conn |> invalid_request("invalid authorization token")
+    end
+  end
+
+  def get_authorization_header(conn) do
+    case authorization = conn |> Plug.Conn.get_req_header("authorization") |> List.last() do
+      nil -> nil
+      _ -> authorization |> String.replace_leading("Bearer ", "")
+    end
   end
 
   defp build_error_response(status, message, error) when is_bitstring(error) do

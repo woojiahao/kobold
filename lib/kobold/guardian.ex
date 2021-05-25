@@ -33,9 +33,12 @@ defmodule Kobold.Guardian do
   end
 
   def revoke_token(token) do
-    case revoke(token) do
-      {:ok, _} -> :ok
-      {:error, _} -> :error
-    end
+    {status, _} = revoke(token)
+    status
+  end
+
+  def verify_token(token) do
+    {status, _} = decode_and_verify(token, %{"typ" => "access"})
+    status
   end
 end
