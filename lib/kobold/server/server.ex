@@ -7,7 +7,7 @@ defmodule Kobold.Server do
   alias Kobold.Server.Error.BadRequestError
 
   defmacro __using__(authorize) do
-    quote bind_quoted: [authorize: authorize] do
+    quote location: :keep, bind_quoted: [authorize: authorize] do
       require Logger
 
       import Kobold.Server, except: [handle_errors: 2]
@@ -37,7 +37,7 @@ defmodule Kobold.Server do
       plug(:dispatch)
 
       def handle_errors(conn, %{reason: err}) do
-        %{plug_status: status, message: message, errors: errors} = err |> Map.merge(%{errors: []})
+        %{plug_status: status, message: message, errors: errors} = %{errors: []} |> Map.merge(err)
         body = if length(errors) == 0, do: message, else: errors
         error = build_error_response(status, reason_phrase(status), body)
         conn |> respond(status, error)
@@ -53,10 +53,10 @@ defmodule Kobold.Server do
     }
 
   def build_error_response(status, message, error) when is_bitstring(error),
-    do: build_error_response(status, message) |> Map.merge(%{"error" => error})
+    do: %{"error" => error} |> Map.merge(build_error_response(status, message))
 
   def build_error_response(status, message, errors) when is_list(errors),
-    do: build_error_response(status, message) |> Map.merge(%{"errors" => errors})
+    do: %{"errors" => errors} |> Map.merge(build_error_response(status, message))
 
   def build_error_response(status, message, error) when is_atom(error),
     do: build_error_response(status, message, Atom.to_string(error))
@@ -110,23 +110,19 @@ defmodule Kobold.Server do
   end
 
   def authorize(conn, _opts) do
-    authorization = conn |> get_authorization_header()
+    token = conn |> get_authorization_token()
 
-    if is_nil(authorization) do
+    if is_nil(token) do
       conn
     else
-      case Kobold.Guardian.verify_token(authorization) do
-        :ok ->
-          conn
-
-        :error ->
-          raise BadRequestError,
-            message: "Invalid JWT provided in Authorization header"
+      case Kobold.Guardian.verify_token(token) do
+        :ok -> conn
+        :error -> raise BadRequestError, message: "Invalid JWT provided in Authorization header"
       end
     end
   end
 
-  def get_authorization_header(conn) do
+  def get_authorization_token(conn) do
     case authorization = conn |> Plug.Conn.get_req_header("authorization") |> List.last() do
       nil -> nil
       _ -> authorization |> String.replace_leading("Bearer ", "")

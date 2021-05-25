@@ -29,24 +29,32 @@ defmodule Kobold.Server.UrlServer do
   post "/create" do
     # TODO: Create a hashed URL
     # TODO: Deny based on type of path such as /auth or /delete or /create
-    create = conn.body_params
+    # TODO: Parse expiration_date
+    token = conn |> get_authorization_token()
 
-    authorization = conn |> get_authorization_header()
+    IO.inspect(conn.body_params)
+    IO.inspect(token)
+    IO.inspect(Kobold.Guardian.get_user_id(token))
 
-    IO.inspect(authorization)
+    %{"original" => original, "hash" => hash, "expiration_date" => expiration_date} =
+      %{"original" => nil, "hash" => :auto, "expiration_date" => nil}
+      |> Map.merge(conn.body_params)
 
-    original = Map.fetch(create, "original")
-    hash = Map.get(create, "hash", :auto)
-    expiration_date = Map.get(create, "expiration_date")
+    if is_nil(original), do: raise(BadRequestError, message: "Missing [original]")
 
-    case original do
-      :error ->
-        raise BadRequestError, message: "missing [original]"
+    try do
+      with {:ok, url} =
+             Url.insert(original, hash, expiration_date, Kobold.Guardian.get_user_id(token)) do
+        conn |> created(url.hash)
+      end
+    rescue
+      Kobold.Exception.DuplicateHashException ->
+        raise InternalServerError, message: "Cannot have duplicate hash"
 
-      _ ->
-        nil
-        # TODO: Handle custom hashes
-        # Kobold.Url.insert(%{original: original, hash: hash, expiration_date: expiration_date, user_id: })
+      ex ->
+        Logger.error("Failed to create hash")
+        Logger.error(ex)
+        raise InternalServerError
     end
   end
 

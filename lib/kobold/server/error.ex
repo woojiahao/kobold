@@ -8,6 +8,6 @@ defmodule Kobold.Server.Error do
   end
 
   defmodule InternalServerError do
-    defexception message: "Internal server error encountered", errors: [], plug_status: 500
+    defexception message: "Something went wrong", errors: [], plug_status: 500
   end
 end

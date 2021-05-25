@@ -2,6 +2,7 @@ defmodule Kobold.Url do
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query, only: [from: 2]
+  import Kobold.Utility, only: [utc_now: 0]
 
   @primary_key false
   schema "url" do
@@ -25,14 +26,8 @@ defmodule Kobold.Url do
   Creates a shortened URL.
   """
   @spec insert(keyword()) :: {:ok, Kobold.Url} | {:error, Ecto.Changeset}
-  def insert(params) do
-    creation_date = DateTime.truncate(DateTime.utc_now(), :second)
+  def insert(original, hash \\ :auto, expiration_date \\ nil, user_id \\ nil) do
     # TODO: Enforce specific rules for custom hashes
-    hash = Keyword.get(params, :hash, :auto)
-    original = Keyword.fetch!(params, :original)
-    expiration_date = Keyword.get(params, :expiration_date)
-    user_id = Keyword.get(params, :user_id)
-
     hash = if hash == :auto, do: generate_hash(original), else: hash
 
     # TODO: Maybe store decoded URL in db?
@@ -42,7 +37,7 @@ defmodule Kobold.Url do
         %{
           hash: hash,
           original: original,
-          creation_date: creation_date,
+          creation_date: utc_now(),
           expiration_date: expiration_date
         },
         [:hash, :original, :creation_date, :expiration_date]
@@ -80,7 +75,7 @@ defmodule Kobold.Url do
       Kobold.Repo.one(query)
     rescue
       Ecto.MultipleResultsError ->
-        raise Kobold.DuplicateHashException
+        raise Kobold.Exception.DuplicateHashException
 
       ex ->
         reraise(ex, __STACKTRACE__)
@@ -88,7 +83,6 @@ defmodule Kobold.Url do
   end
 
   def delete(hash, user_id) do
-    
   end
 
   defp attempt_insert(url) do
@@ -99,7 +93,7 @@ defmodule Kobold.Url do
         hash =
           if url.data.hash == :auto,
             do: generate_hash(url.data.original),
-            else: raise(Kobold.DuplicateHashException)
+            else: raise(Kobold.Exception.DuplicateHashException)
 
         url = url |> cast(%{hash: hash}, [:hash])
         attempt_insert(url)

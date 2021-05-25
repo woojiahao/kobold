@@ -12,6 +12,14 @@ defmodule Kobold.Guardian do
     {:ok, resource}
   end
 
+  def get_user_id(nil), do: nil
+
+  def get_user_id(token) do
+    with {:ok, claims} <- decode_and_verify(token) do
+      claims["sub"]
+    end
+  end
+
   def issue_token(user_id) do
     with {:ok, access_token, _} <- encode_and_sign(user_id),
          {:ok, refresh_token, _} <- encode_and_sign(user_id, %{}, token_type: "refresh") do
