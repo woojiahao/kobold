@@ -4,6 +4,8 @@ defmodule Kobold.Server do
   import Plug.Conn, only: [send_resp: 3, update_resp_header: 4]
   import Plug.Conn.Status, only: [reason_phrase: 1]
 
+  alias Kobold.Server.Error.BadRequestError
+
   defmacro __using__(authorize) do
     quote bind_quoted: [authorize: authorize] do
       require Logger
@@ -118,7 +120,7 @@ defmodule Kobold.Server do
           conn
 
         :error ->
-          raise Kobold.Server.Error.InvalidRequestError,
+          raise BadRequestError,
             message: "Invalid JWT provided in Authorization header"
       end
     end
