@@ -1,19 +1,23 @@
 defmodule Kobold.Server do
-  import Plug.Conn
-
   # TODO: Log any responses
 
-  defmacro __using__(authorize \\ false) do
+  import Plug.Conn, only: [send_resp: 3, update_resp_header: 4]
+  import Plug.Conn.Status, only: [reason_phrase: 1]
+
+  defmacro __using__(authorize) do
     quote bind_quoted: [authorize: authorize] do
-      use Plug.Router
       require Logger
-      import Kobold.Server
+
+      import Kobold.Server, except: [handle_errors: 2]
+      alias Kobold.Server.Error.InternalServerError
+      alias Kobold.Server.Error.BadRequestError
+      alias Kobold.Server.Error.NotFoundError
+
       alias Kobold.User, as: User
       alias Kobold.Url, as: Url
 
-      if Mix.env() == :dev do
-        use Plug.Debugger
-      end
+      use Plug.Router
+      use Plug.ErrorHandler
 
       plug(Plug.Logger)
       plug(:match)
@@ -29,23 +33,43 @@ defmodule Kobold.Server do
       end
 
       plug(:dispatch)
+
+      def handle_errors(conn, %{reason: err}) do
+        %{plug_status: status, message: message, errors: errors} = err |> Map.merge(%{errors: []})
+        body = if length(errors) == 0, do: message, else: errors
+        error = build_error_response(status, reason_phrase(status), body)
+        conn |> respond(status, error)
+      end
     end
   end
 
-  def invalid_request(conn, reason) do
-    error = build_error_response(400, "invalid request", reason)
+  def build_error_response(status, message),
+    do: %{
+      "request_status" => "Error",
+      "http_code" => status,
+      "http_message" => message
+    }
 
-    conn
-    |> set_content_type
-    |> respond(400, error)
+  def build_error_response(status, message, error) when is_bitstring(error),
+    do: build_error_response(status, message) |> Map.merge(%{"error" => error})
+
+  def build_error_response(status, message, errors) when is_list(errors),
+    do: build_error_response(status, message) |> Map.merge(%{"errors" => errors})
+
+  def build_error_response(status, message, error) when is_atom(error),
+    do: build_error_response(status, message, Atom.to_string(error))
+
+  def respond(conn, status, body) do
+    conn |> set_content_type |> send_resp(status, Jason.encode!(body))
   end
 
-  def not_found(conn, reason) do
-    error = build_error_response(404, "not found", reason)
-
+  def set_content_type(conn) do
     conn
-    |> set_content_type
-    |> respond(404, error)
+    |> update_resp_header(
+      "content-type",
+      "application/json; charset=utf-8",
+      &(&1 <> "; charset=utf-8")
+    )
   end
 
   def ok(conn, message) do
@@ -57,7 +81,6 @@ defmodule Kobold.Server do
     }
 
     conn
-    |> set_content_type
     |> respond(200, response)
   end
 
@@ -70,7 +93,6 @@ defmodule Kobold.Server do
     }
 
     conn
-    |> set_content_type
     |> respond(201, response)
   end
 
@@ -82,37 +104,23 @@ defmodule Kobold.Server do
     }
 
     conn
-    |> set_content_type
     |> respond(201, response)
-  end
-
-  @spec internal_server_error(Plug.Conn.t(), list() | String.t()) :: Plug.Conn.t()
-  def internal_server_error(conn, error) do
-    error =
-      build_error_response(
-        500,
-        "internal server error",
-        error
-      )
-
-    conn
-    |> set_content_type
-    |> respond(500, error)
   end
 
   def authorize(conn, _opts) do
     authorization = conn |> get_authorization_header()
-    IO.puts("authorizing")
 
-    cond do
-      is_nil(authorization) ->
-        conn
+    if is_nil(authorization) do
+      conn
+    else
+      case Kobold.Guardian.verify_token(authorization) do
+        :ok ->
+          conn
 
-      :ok = Kobold.Guardian.verify_token(authorization) ->
-        conn
-
-      :error = Kobold.Guardian.verify_token(authorization) ->
-        conn |> invalid_request("invalid authorization token")
+        :error ->
+          raise Kobold.Server.Error.InvalidRequestError,
+            message: "Invalid JWT provided in Authorization header"
+      end
     end
   end
 
@@ -121,39 +129,5 @@ defmodule Kobold.Server do
       nil -> nil
       _ -> authorization |> String.replace_leading("Bearer ", "")
     end
-  end
-
-  defp build_error_response(status, message, error) when is_bitstring(error) do
-    %{
-      "request_status" => "error",
-      "http_code" => status,
-      "http_message" => message,
-      "error_reason" => error
-    }
-  end
-
-  defp build_error_response(status, message, errors) when is_list(errors) do
-    %{
-      "request_status" => "error",
-      "http_code" => status,
-      "http_message" => message,
-      "errors" => errors
-    }
-  end
-
-  defp build_error_response(status, message, error) when is_atom(error),
-    do: build_error_response(status, message, Atom.to_string(error))
-
-  defp respond(conn, status, body) do
-    send_resp(conn, status, Jason.encode!(body))
-  end
-
-  defp set_content_type(conn) do
-    conn
-    |> update_resp_header(
-      "content-type",
-      "application/json; charset=utf-8",
-      &(&1 <> "; charset=utf-8")
-    )
   end
 end

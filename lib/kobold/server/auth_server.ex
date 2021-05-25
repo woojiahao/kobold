@@ -26,15 +26,15 @@ defmodule Kobold.Server.AuthServer do
                   |> Enum.map(fn {_, {reason, _}} -> reason end)
 
                 Logger.error(IO.inspect(errors))
-                internal_server_error(conn, errors)
+                raise InternalServerError, errors: errors
             end
 
           {:error, reason} ->
-            invalid_request(conn, reason)
+            raise BadRequestError, message: reason
         end
 
       {:error, reason} ->
-        invalid_request(conn, reason)
+        raise BadRequestError, message: reason
     end
   end
 
@@ -46,11 +46,11 @@ defmodule Kobold.Server.AuthServer do
              {:ok, access_token, refresh_token} <- issue_token(user.user_id) do
           issue_jwt_token(conn, access_token, refresh_token)
         else
-          {:error, reason} -> internal_server_error(conn, reason)
+          {:error, reason} -> raise InternalServerError, message: reason
         end
 
       {:error, reason} ->
-        invalid_request(conn, reason)
+        raise BadRequestError, message: reason
     end
   end
 
@@ -59,11 +59,11 @@ defmodule Kobold.Server.AuthServer do
       {:ok, refresh_token} ->
         case refresh_token(refresh_token) do
           {:ok, access_token, refresh_token} -> issue_jwt_token(conn, access_token, refresh_token)
-          {:error, reason} -> internal_server_error(conn, reason)
+          {:error, reason} -> raise InternalServerError, message: reason
         end
 
       {:error, reason} ->
-        invalid_request(conn, reason)
+        raise BadRequestError, message: reason
     end
   end
 
@@ -75,11 +75,11 @@ defmodule Kobold.Server.AuthServer do
              :ok <- revoke_token(refresh_token) do
           ok(conn, "successfully revoked access & refresh tokens")
         else
-          :error -> internal_server_error(conn, "unable to revoke refresh token")
+          :error -> raise InternalServerError, message: "unable to revoke refresh token"
         end
 
       {:error, reason} ->
-        invalid_request(conn, reason)
+        raise BadRequestError, message: reason
     end
   end
 

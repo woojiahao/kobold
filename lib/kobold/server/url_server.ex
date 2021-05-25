@@ -16,7 +16,7 @@ defmodule Kobold.Server.UrlServer do
         else
           case url = Kobold.Url.get(path) do
             nil ->
-              not_found(conn, "Invalid path")
+              raise NotFoundError, message: "Invalid path"
 
             _ ->
               Kobold.Cache.store_hash(url.hash, url.original)
@@ -41,7 +41,7 @@ defmodule Kobold.Server.UrlServer do
 
     case original do
       :error ->
-        invalid_request(conn, "missing [original]")
+        raise BadRequestError, message: "missing [original]"
 
       _ ->
         nil
