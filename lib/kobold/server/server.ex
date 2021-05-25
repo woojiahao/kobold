@@ -61,18 +61,17 @@ defmodule Kobold.Server do
   def build_error_response(status, message, error) when is_atom(error),
     do: build_error_response(status, message, Atom.to_string(error))
 
-  def respond(conn, status, body) do
-    conn |> set_content_type |> send_resp(status, Jason.encode!(body))
-  end
+  def respond(conn, status, body),
+    do: conn |> set_content_type |> send_resp(status, Jason.encode!(body))
 
-  def set_content_type(conn) do
-    conn
-    |> update_resp_header(
-      "content-type",
-      "application/json; charset=utf-8",
-      &(&1 <> "; charset=utf-8")
-    )
-  end
+  def set_content_type(conn),
+    do:
+      conn
+      |> update_resp_header(
+        "content-type",
+        "application/json; charset=utf-8",
+        &(&1 <> "; charset=utf-8")
+      )
 
   def ok(conn, message) do
     response = %{
@@ -88,9 +87,9 @@ defmodule Kobold.Server do
 
   def created(conn, message) do
     response = %{
-      "request_status" => "success",
+      "request_status" => "Success",
       "http_code" => 201,
-      "http_message" => "created",
+      "http_message" => "Created",
       "message" => message
     }
 

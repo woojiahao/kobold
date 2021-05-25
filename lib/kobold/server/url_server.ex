@@ -27,14 +27,8 @@ defmodule Kobold.Server.UrlServer do
   end
 
   post "/create" do
-    # TODO: Create a hashed URL
-    # TODO: Deny based on type of path such as /auth or /delete or /create
     # TODO: Parse expiration_date
-    token = conn |> get_authorization_token()
-
-    IO.inspect(conn.body_params)
-    IO.inspect(token)
-    IO.inspect(Kobold.Guardian.get_user_id(token))
+    # TODO: Limit custom user hashes
 
     %{"original" => original, "hash" => hash, "expiration_date" => expiration_date} =
       %{"original" => nil, "hash" => :auto, "expiration_date" => nil}
@@ -42,11 +36,21 @@ defmodule Kobold.Server.UrlServer do
 
     if is_nil(original), do: raise(BadRequestError, message: "Missing [original]")
 
-    try do
-      with {:ok, url} =
-             Url.insert(original, hash, expiration_date, Kobold.Guardian.get_user_id(token)) do
-        conn |> created(url.hash)
+    user_id =
+      conn
+      |> get_authorization_token()
+      |> Kobold.Guardian.get_user_id()
+
+    hash =
+      case validate_hash(if is_nil(user_id), do: :auto, else: hash) do
+        {:ok, hash} -> hash
+        {:error, reason} -> raise BadRequestError, message: reason
       end
+
+    try do
+      {:ok, url} = Url.insert(original, hash, expiration_date, user_id)
+      # TODO: Allow customisable created messages?
+      conn |> created(url.hash)
     rescue
       Kobold.Exception.DuplicateHashException ->
         raise InternalServerError, message: "Cannot have duplicate hash"
@@ -65,6 +69,19 @@ defmodule Kobold.Server.UrlServer do
 
   match _ do
     send_resp(conn, 404, "Invalid path")
+  end
+
+  defp validate_hash(:auto), do: {:ok, :auto}
+
+  @blacklist_words ~w(create delete signup login logout auth refresh kobold)
+  defp validate_hash(hash) when hash in @blacklist_words,
+    do: {:error, "Hash is a reserved word and cannot be used. Try again."}
+
+  @blacklist_chars Regex.compile!("([&/\\?%()\[\]<>=])*")
+  defp validate_hash(hash) do
+    if Regex.match?(@blacklist_chars, hash),
+      do: {:error, "Hash cannot contain invalid symbols: [&=/\\%()[]<>]"},
+      else: {:ok, hash}
   end
 
   defp redirect(conn, original) do

@@ -82,7 +82,7 @@ defmodule Kobold.Url do
     end
   end
 
-  def delete(hash, user_id) do
+  def delete(_hash, _user_id) do
   end
 
   defp attempt_insert(url) do
@@ -101,6 +101,7 @@ defmodule Kobold.Url do
   end
 
   defp generate_hash(url) do
+    # TODO: Just use random generator lol
     {:ok, hash} =
       URI.decode(url)
       |> Kobold.Utility.sha256()
