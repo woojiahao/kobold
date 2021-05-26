@@ -14,7 +14,7 @@ defmodule Kobold.Server.UrlServer do
         if !is_nil(original) do
           conn |> redirect(original)
         else
-          case url = Kobold.Url.get(path) do
+          case url = Url.get(path) do
             nil ->
               raise NotFoundError, message: "Invalid path"
 
@@ -70,8 +70,21 @@ defmodule Kobold.Server.UrlServer do
   end
 
   delete "/delete/:hash" do
-    # TODO: Restrict this to user only keys
-    send_resp(conn, 200, "Deleting key")
+    # TODO: Check for any active conn and delay delete till all closed?
+    user_id =
+      conn
+      |> get_authorization_token()
+      |> Kobold.Guardian.get_user_id()
+
+    if is_nil(user_id), do: raise(UnauthorizedError)
+
+    case Url.delete(hash, user_id) do
+      {:ok, _} ->
+        conn |> ok("URL deleted")
+
+      {:error, errors} ->
+        raise InternalServerError, errors: errors
+    end
   end
 
   match _ do

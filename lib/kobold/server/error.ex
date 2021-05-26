@@ -1,10 +1,14 @@
 defmodule Kobold.Server.Error do
-  defmodule NotFoundError do
-    defexception message: "Resource not found", plug_status: 404
-  end
-
   defmodule BadRequestError do
     defexception message: "Bad request", plug_status: 400
+  end
+
+  defmodule UnauthorizedError do
+    defexception message: "Unauthorized access", plug_status: 401
+  end
+
+  defmodule NotFoundError do
+    defexception message: "Resource not found", plug_status: 404
   end
 
   defmodule InternalServerError do

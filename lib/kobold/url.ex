@@ -1,8 +1,8 @@
 defmodule Kobold.Url do
   use Ecto.Schema
   import Ecto.Changeset
-  import Ecto.Query, only: [from: 2]
-  import Kobold.Utility, only: [utc_now: 0]
+  import Ecto.Query, only: [from: 2, where: 3]
+  import Kobold.Utility, only: [utc_now: 0, parse_changeset_errors: 1]
 
   @primary_key false
   schema "url" do
@@ -58,8 +58,9 @@ defmodule Kobold.Url do
     attempt_insert(url)
   end
 
-  def get(hash) do
+  def get(hash, user_id \\ :ignore) do
     # TODO: Handle expiration date
+    # TODO: Handle corner case where hash might have expired, delete this and inform delete that it was recently deleted
     now = Kobold.Utility.utc_now()
 
     query =
@@ -70,6 +71,8 @@ defmodule Kobold.Url do
             (is_nil(u.expiration_date) or
                u.expiration_date > ^now)
       )
+
+    query = if user_id != :ignore, do: query |> where_user_id(user_id), else: query
 
     try do
       Kobold.Repo.one(query)
@@ -82,8 +85,16 @@ defmodule Kobold.Url do
     end
   end
 
-  def delete(_hash, _user_id) do
+  def delete(hash, user_id) do
+    url = get(hash, user_id)
+
+    case Kobold.Repo.delete(url) do
+      {:ok, _} -> {:ok, "Delete successful"}
+      {:error, changeset} -> {:error, parse_changeset_errors(changeset)}
+    end
   end
+
+  defp where_user_id(query, user_id), do: query |> where([u], u.user_id == ^user_id)
 
   defp attempt_insert(url) do
     try do

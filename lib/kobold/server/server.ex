@@ -14,6 +14,7 @@ defmodule Kobold.Server do
       alias Kobold.Server.Error.InternalServerError
       alias Kobold.Server.Error.BadRequestError
       alias Kobold.Server.Error.NotFoundError
+      alias Kobold.Server.Error.UnauthorizedError
 
       alias Kobold.User, as: User
       alias Kobold.Url, as: Url

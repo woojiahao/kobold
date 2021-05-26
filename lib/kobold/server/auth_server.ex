@@ -21,9 +21,7 @@ defmodule Kobold.Server.AuthServer do
                 created(conn, "user created successfully")
 
               {:error, changeset} ->
-                errors =
-                  changeset.errors
-                  |> Enum.map(fn {_, {reason, _}} -> reason end)
+                errors = Kobold.Utility.parse_changeset_errors(changeset)
 
                 Logger.error(IO.inspect(errors))
                 raise InternalServerError, errors: errors

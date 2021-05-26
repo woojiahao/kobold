@@ -31,6 +31,11 @@ defmodule Kobold.Utility do
   def utc_now(), do: DateTime.utc_now() |> DateTime.truncate(:second)
   def sha256(block), do: :crypto.hash(:sha256, block)
 
+  def parse_changeset_errors(changeset),
+    do:
+      changeset.errors
+      |> Enum.map(fn {_, {reason, _}} -> reason end)
+
   # Generates a list of random indices based on given size, counting up to max
   defp generate_indices(_max, size, indices) when length(indices) == size, do: indices
 
