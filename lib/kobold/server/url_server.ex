@@ -60,7 +60,7 @@ defmodule Kobold.Server.UrlServer do
       conn |> created(url.hash)
     rescue
       Kobold.Exception.DuplicateHashException ->
-        raise InternalServerError, message: "Cannot have duplicate hash"
+        raise BadRequestError, message: "Cannot have duplicate hash"
 
       ex ->
         Logger.error("Failed to create hash")
@@ -85,17 +85,19 @@ defmodule Kobold.Server.UrlServer do
   defp validate_hash(hash) when hash in @blacklist_words,
     do: {:error, "Hash is a reserved word and cannot be used. Try again."}
 
-  # TODO: Figure out why Regex form of this doesn't work
-  @blacklist_chars Regex.compile!("([&/\\?%()\[\]<>=])*")
+  @blacklist_chars ~w(& / \\ ? % \( \) [ ] < > =)
   defp validate_hash(hash) do
-    if Regex.match?(@blacklist_chars, hash),
+    if hash |> String.graphemes() |> Enum.any?(&(&1 in @blacklist_chars)),
       do: {:error, "Hash cannot contain invalid symbols: [&=/\\%()[]<>]"},
       else: {:ok, hash}
   end
 
-  @spec validate_expiration_date(integer()) ::
+  @spec validate_expiration_date(integer() | String.t()) ::
           nil | {:ok, DateTime.t()} | {:error, String.t()} | {:internal_server_error, String.t()}
   defp validate_expiration_date(nil), do: nil
+
+  defp validate_expiration_date(expiration_date_epoch) when is_bitstring(expiration_date_epoch),
+    do: validate_expiration_date(String.to_integer(expiration_date_epoch))
 
   defp validate_expiration_date(expiration_date_epoch) do
     with {:ok, expiration_datetime} <- DateTime.from_unix(expiration_date_epoch),
@@ -103,7 +105,7 @@ defmodule Kobold.Server.UrlServer do
          {:ok, expiration_date} <- datetime_to_date(expiration_datetime),
          {:ok, now_date} <- datetime_to_date(now_datetime),
          compared <- Date.compare(expiration_date, now_date),
-         true <- Enum.member?([:lt, :eq], compared) do
+         false <- compared in [:lt, :eq] do
       {:ok, expiration_datetime}
     else
       {:error, :invalid_unix_time} ->
@@ -112,7 +114,7 @@ defmodule Kobold.Server.UrlServer do
       {:error, :invalid_date} ->
         {:internal_server_error, "Failed to create Date from datetime"}
 
-      false ->
+      true ->
         {:error,
          "Invalid expiration date provided. Cannot be before or on the same date as today."}
     end
