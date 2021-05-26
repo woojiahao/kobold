@@ -27,7 +27,6 @@ defmodule Kobold.Server.UrlServer do
   end
 
   post "/create" do
-    # TODO: Parse expiration_date
     # TODO: Limit custom user hashes
 
     %{"original" => original, "hash" => hash, "expiration_date" => expiration_date} =
@@ -45,6 +44,14 @@ defmodule Kobold.Server.UrlServer do
       case validate_hash(if is_nil(user_id), do: :auto, else: hash) do
         {:ok, hash} -> hash
         {:error, reason} -> raise BadRequestError, message: reason
+      end
+
+    expiration_date =
+      case validate_expiration_date(expiration_date) do
+        {:ok, expiration_datetime} -> expiration_datetime
+        {:error, reason} -> raise BadRequestError, message: reason
+        {:internal_server_error, reason} -> raise InternalServerError, message: reason
+        _ -> nil
       end
 
     try do
@@ -71,17 +78,52 @@ defmodule Kobold.Server.UrlServer do
     send_resp(conn, 404, "Invalid path")
   end
 
+  @spec validate_hash(String.t() | atom()) :: {:ok, String.t() | atom()} | {:error, String.t()}
   defp validate_hash(:auto), do: {:ok, :auto}
 
   @blacklist_words ~w(create delete signup login logout auth refresh kobold)
   defp validate_hash(hash) when hash in @blacklist_words,
     do: {:error, "Hash is a reserved word and cannot be used. Try again."}
 
+  # TODO: Figure out why Regex form of this doesn't work
   @blacklist_chars Regex.compile!("([&/\\?%()\[\]<>=])*")
   defp validate_hash(hash) do
     if Regex.match?(@blacklist_chars, hash),
       do: {:error, "Hash cannot contain invalid symbols: [&=/\\%()[]<>]"},
       else: {:ok, hash}
+  end
+
+  @spec validate_expiration_date(integer()) ::
+          nil | {:ok, DateTime.t()} | {:error, String.t()} | {:internal_server_error, String.t()}
+  defp validate_expiration_date(nil), do: nil
+
+  defp validate_expiration_date(expiration_date_epoch) do
+    with {:ok, expiration_datetime} <- DateTime.from_unix(expiration_date_epoch),
+         now_datetime <- Kobold.Utility.utc_now(),
+         {:ok, expiration_date} <- datetime_to_date(expiration_datetime),
+         {:ok, now_date} <- datetime_to_date(now_datetime),
+         compared <- Date.compare(expiration_date, now_date),
+         true <- Enum.member?([:lt, :eq], compared) do
+      {:ok, expiration_datetime}
+    else
+      {:error, :invalid_unix_time} ->
+        {:error, "Invalid expiration date provided."}
+
+      {:error, :invalid_date} ->
+        {:internal_server_error, "Failed to create Date from datetime"}
+
+      false ->
+        {:error,
+         "Invalid expiration date provided. Cannot be before or on the same date as today."}
+    end
+  end
+
+  @spec datetime_to_date(DateTime.t()) :: {:ok, Date.t()} | {:error, atom()}
+  defp datetime_to_date(datetime) do
+    day = datetime.day
+    month = datetime.month
+    year = datetime.year
+    Date.new(year, month, day)
   end
 
   defp redirect(conn, original) do
