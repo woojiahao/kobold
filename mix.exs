@@ -22,6 +22,7 @@ defmodule Kobold.MixProject do
   defp deps do
     [
       {:ecto_sql, "~> 3.0"},
+      {:telemetry, "~> 0.4"},
       {:postgrex, ">= 0.0.0"},
       {:redix, ">= 0.0.0"},
       {:castore, ">= 0.0.0"},
