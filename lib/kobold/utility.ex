@@ -36,6 +36,14 @@ defmodule Kobold.Utility do
       changeset.errors
       |> Enum.map(fn {_, {reason, _}} -> reason end)
 
+  def permutations(x, y), do: permutations(x, y, [])
+  defp permutations([], _, perms), do: perms
+
+  defp permutations([x | rest], y, perms) do
+    t = y |> Enum.reduce([], fn i, acc -> acc ++ [[x, i]] end)
+    permutations(rest, y, perms ++ t)
+  end
+
   # Generates a list of random indices based on given size, counting up to max
   defp generate_indices(_max, size, indices) when length(indices) == size, do: indices
 
