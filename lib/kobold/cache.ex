@@ -1,6 +1,5 @@
 defmodule Kobold.Cache do
   # TODO: Add elaborate fail safe feature similar to the rate limiting feature of Broadway to monitor Redis connections
-  # TODO: Add deleting of cache if the hash is deleted
   # TODO: Simply repeated code
   use GenServer
 
@@ -10,18 +9,9 @@ defmodule Kobold.Cache do
 
   @impl true
   def init(cache_name: name, retry_after: retry_after) do
-    :ok =
-      :telemetry.attach_many(
-        "kobold-cache-telemetry-handler",
-        [
-          [:kobold, :cache, :delete, :success],
-          [:kobold, :cache, :delete, :redis_error],
-          [:kobold, :cache, :set, :success],
-          [:kobold, :cache, :get, :success]
-        ],
-        &Kobold.Telemetry.handle_event/4,
-        nil
-      )
+    events = [:get, :set, :delete]
+    status = [:success, :connection_error, :redis_error]
+    Kobold.Telemetry.attach_handlers(:cache, events, status)
 
     {:ok, %{name: name, retry_after: retry_after}}
   end

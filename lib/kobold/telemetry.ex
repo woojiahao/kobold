@@ -2,6 +2,24 @@ defmodule Kobold.Telemetry do
   # TODO: Add Telemetry.Metrics
   require Logger
 
+  def attach_handlers(module, events, status) do
+    full_events =
+      Kobold.Utility.permutations(events, status)
+      |> Enum.map(&[:kobold, module | &1])
+
+    name = "kobold-#{Atom.to_string(module)}-telemetry-handler"
+
+    :ok =
+      :telemetry.attach_many(
+        name,
+        full_events,
+        &Kobold.Telemetry.handle_event/4,
+        nil
+      )
+
+    Logger.info("Attached handlers for #{name}")
+  end
+
   def handle_event([:kobold, :cache, :delete, :success], _, %{hash: hash}, _) do
     Logger.info("Deleted #{hash} successfully")
   end
