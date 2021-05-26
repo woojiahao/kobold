@@ -6,7 +6,7 @@ defmodule Kobold.Server do
 
   alias Kobold.Server.Error.BadRequestError
 
-  defmacro __using__(authorize) do
+  defmacro __using__(authorize: authorize) do
     quote location: :keep, bind_quoted: [authorize: authorize] do
       require Logger
 
@@ -18,6 +18,7 @@ defmodule Kobold.Server do
 
       alias Kobold.User, as: User
       alias Kobold.Url, as: Url
+      alias Kobold.Cache, as: Cache
 
       use Plug.Router
       use Plug.ErrorHandler

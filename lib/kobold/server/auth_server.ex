@@ -8,7 +8,7 @@ defmodule Kobold.Server.AuthServer do
   valid access tokens all the time. A refresh token is used over refreshing the JWT internally as it makes the adoption
   of other OAuth flows a lot easier for the client.
   """
-  use Kobold.Server
+  use Kobold.Server, authorize: false
   import Kobold.Guardian
 
   post "/auth/signup" do

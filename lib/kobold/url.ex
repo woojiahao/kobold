@@ -86,10 +86,12 @@ defmodule Kobold.Url do
   end
 
   def delete(hash, user_id) do
-    url = get(hash, user_id)
-
-    case Kobold.Repo.delete(url) do
-      {:ok, _} -> {:ok, "Delete successful"}
+    with url <- get(hash, user_id),
+         false <- is_nil(url),
+         {:ok, _} <- Kobold.Repo.delete(url) do
+      {:ok, "Delete successful"}
+    else
+      true -> {:ok, "No URL"}
       {:error, changeset} -> {:error, parse_changeset_errors(changeset)}
     end
   end

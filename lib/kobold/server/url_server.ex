@@ -9,7 +9,7 @@ defmodule Kobold.Server.UrlServer do
         conn |> resp(200, "") |> put_resp_header("Content-Type", "image/x-icon")
 
       _ ->
-        original = Kobold.Cache.get_original(path)
+        original = Cache.get_original(path)
 
         if !is_nil(original) do
           conn |> redirect(original)
@@ -80,7 +80,8 @@ defmodule Kobold.Server.UrlServer do
 
     case Url.delete(hash, user_id) do
       {:ok, _} ->
-        conn |> ok("URL deleted")
+        Cache.delete_hash(hash)
+        conn |> ok("Deleted hash")
 
       {:error, errors} ->
         raise InternalServerError, errors: errors
