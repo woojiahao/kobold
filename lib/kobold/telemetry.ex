@@ -24,15 +24,6 @@ defmodule Kobold.Telemetry do
     Logger.info("Deleted #{hash} successfully")
   end
 
-  def handle_event(
-        [:kobold, :cache, :delete, :redis_error],
-        _,
-        %{hash: hash, message: message},
-        _
-      ) do
-    Logger.info("Failed to delete #{hash} due to #{message}")
-  end
-
   def handle_event([:kobold, :cache, :set, :success], _, %{hash: hash, original: original}, _) do
     Logger.info("Save #{hash} for #{original} in cache")
   end
@@ -41,5 +32,13 @@ defmodule Kobold.Telemetry do
     if is_nil(original),
       do: Logger.info("Cache does not contain cache for #{hash}"),
       else: Logger.info("Retrieved #{hash} for #{original} in cache")
+  end
+
+  def handle_event([:kobold, :cache, _, :redis_error], _, %{message: message}, _) do
+    Logger.info("Redis failed due to #{message}")
+  end
+
+  def handle_event([:kobold, :cache, _, :connection_error], _, _, _) do
+    Logger.info("Redis failed to connect. Retrying...")
   end
 end
