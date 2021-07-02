@@ -73,6 +73,7 @@ Check out the following projects:
 - [ ] User management
 - [ ] Front-end
 - [ ] Private hashes?
+- [ ] Built-in caching instead of Redis
 
 ### Guide
 
